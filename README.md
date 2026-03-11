@@ -40,10 +40,10 @@ west flash
 The nRF54H20DK enumerates multiple CDC-ACM serial ports over USB. APP core logs
 appear on one of the `/dev/ttyACM*` devices at **115200 baud**.
 
-Install `picocom` if needed:
+Install `pyserial` if needed:
 
 ```bash
-sudo apt install picocom
+pip install pyserial
 ```
 
 Find the right port (plug in the board first):
@@ -56,10 +56,10 @@ The first port (`/dev/ttyACM0`) is usually the APP core. If it shows no output,
 try the next one (`/dev/ttyACM1`, etc.).
 
 ```bash
-picocom /dev/ttyACM0 -b 115200
+python3 -m serial.tools.miniterm /dev/ttyACM0 115200
 ```
 
-Exit with `Ctrl-A Ctrl-X`.
+Exit with `Ctrl-]`.
 
 After flashing, reset the board (press the reset button) to see startup logs:
 
