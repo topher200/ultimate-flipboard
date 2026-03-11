@@ -34,3 +34,37 @@ Run this in each new terminal session before building. Then from this repo:
 west build -p always -b nrf54h20dk/nrf54h20/cpuapp --sysbuild
 west flash
 ```
+
+## Monitor serial output
+
+The nRF54H20DK enumerates multiple CDC-ACM serial ports over USB. APP core logs
+appear on one of the `/dev/ttyACM*` devices at **115200 baud**.
+
+Install `picocom` if needed:
+
+```bash
+sudo apt install picocom
+```
+
+Find the right port (plug in the board first):
+
+```bash
+ls /dev/ttyACM*
+```
+
+The first port (`/dev/ttyACM0`) is usually the APP core. If it shows no output,
+try the next one (`/dev/ttyACM1`, etc.).
+
+```bash
+picocom /dev/ttyACM0 -b 115200
+```
+
+Exit with `Ctrl-A Ctrl-X`.
+
+After flashing, reset the board (press the reset button) to see startup logs:
+
+```
+[00:00:00.000] Ultimate Flipboard starting
+[00:00:00.001] Ready — BTN1=A+  BTN2=B+  BTN3=A−  BTN4=reset
+[00:00:00.001] Score │ Team A:  0  │  Team B:  0
+```
