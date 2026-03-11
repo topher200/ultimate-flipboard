@@ -4,5 +4,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(ultimate_flipboard)
 
-target_sources(app PRIVATE src/main.c src/scoreboard.c)
+target_sources(app PRIVATE src/main.c src/scoreboard.c src/flipdots.c)
 target_include_directories(app PRIVATE include)

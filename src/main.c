@@ -17,12 +17,45 @@
 #include <zephyr/logging/log.h>
 
 #include "scoreboard.h"
+#include "flipdots.h"
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
 /* ── Score state ─────────────────────────────────────────────────────────── */
 
 static scoreboard_t sb;
+
+/* ── Flipdots test mode ──────────────────────────────────────────────────── */
+
+#define TEST_MODE_INTERVAL_MS 300  /* ~3.3 Hz flip rate */
+
+static flipdots_fb_t test_fb;
+static bool test_is_white;
+static struct k_work_delayable test_work;
+
+static void test_mode_update(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* Toggle state */
+	test_is_white = !test_is_white;
+
+	/* Fill or clear framebuffer */
+	if (test_is_white) {
+		flipdots_fill(test_fb);
+	} else {
+		flipdots_clear(test_fb);
+	}
+
+	/* Send frame (broadcast address 0xFF) */
+	int ret = flipdots_send_frame(0xFF, test_fb, true);
+	if (ret != 0) {
+		LOG_WRN("Failed to send flipdots frame: %d", ret);
+	}
+
+	/* Reschedule for next flip */
+	k_work_schedule(&test_work, K_MSEC(TEST_MODE_INTERVAL_MS));
+}
 
 static void print_score(void)
 {
@@ -123,9 +156,23 @@ static int setup_button(const struct gpio_dt_spec *btn,
 
 int main(void)
 {
+	int ret;
+
 	LOG_INF("Ultimate Flipboard starting");
 
 	scoreboard_init(&sb);
+
+	/* Initialize flipdots driver */
+	ret = flipdots_init();
+	if (ret == 0) {
+		/* Start automatic test mode */
+		test_is_white = false;
+		k_work_init_delayable(&test_work, test_mode_update);
+		k_work_schedule(&test_work, K_MSEC(TEST_MODE_INTERVAL_MS));
+		LOG_INF("Flipdots test mode started");
+	} else {
+		LOG_WRN("Flipdots initialization failed: %d (test mode disabled)", ret);
+	}
 
 	setup_button(&btn_inc_a, &cb_inc_a, on_inc_a);
 	setup_button(&btn_inc_b, &cb_inc_b, on_inc_b);

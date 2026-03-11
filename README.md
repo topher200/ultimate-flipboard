@@ -28,10 +28,11 @@ Before running `west`, activate the nRF toolchain in your shell:
 source <(nrfutil toolchain-manager env --as-script --ncs-version v3.2.3)
 ```
 
-Run this in each new terminal session before building. Then from this repo:
+Run this in each new terminal session before building. West must be run from the NCS workspace root, passing the project path as an argument:
 
 ```bash
-west build -p always -b nrf54h20dk/nrf54h20/cpuapp
+cd ~/ncs/v3.2.3
+west build -p always -b nrf54h20dk/nrf54h20/cpuapp --sysbuild /path/to/ultimate-flipboard
 west flash
 ```
 
