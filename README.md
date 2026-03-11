@@ -31,7 +31,7 @@ source <(nrfutil toolchain-manager env --as-script --ncs-version v3.2.3)
 Run this in each new terminal session before building. Then from this repo:
 
 ```bash
-west build -p always -b nrf54h20dk/nrf54h20/cpuapp --sysbuild
+west build -p always -b nrf54h20dk/nrf54h20/cpuapp
 west flash
 ```
 
@@ -67,4 +67,49 @@ After flashing, reset the board (press the reset button) to see startup logs:
 [00:00:00.000] Ultimate Flipboard starting
 [00:00:00.001] Ready — BTN1=A+  BTN2=B+  BTN3=A−  BTN4=reset
 [00:00:00.001] Score │ Team A:  0  │  Team B:  0
+```
+
+# Testing
+
+Unit tests cover the score logic and run locally without any hardware.
+
+## Run tests
+
+Activate the toolchain (if not already done), then build and run:
+
+```bash
+cd /path/to/sdk-nrf/v3.2.3
+
+west build -p always -b native_sim/native/64 --no-sysbuild \
+  /path/to/ultimate-flipboard/tests/scoreboard
+
+./build/zephyr/zephyr.exe
+```
+
+Expected output:
+
+```
+Running TESTSUITE scoreboard
+===================================================================
+START - test_dec_a_floors_at_zero
+ PASS - test_dec_a_floors_at_zero in 0.000 seconds
+...
+SUITE PASS - 100.00% [scoreboard]: pass = 8, fail = 0, skip = 0, total = 8
+PROJECT EXECUTION SUCCESSFUL
+```
+
+## Adding tests
+
+Tests live in `tests/scoreboard/src/main.c`. Score logic lives in `src/scoreboard.c`
+and `include/scoreboard.h` — it has no Zephyr or hardware dependencies, so new
+functions are easy to test. Add a `ZTEST` block for each new behaviour:
+
+```c
+ZTEST(scoreboard, test_my_new_case)
+{
+    scoreboard_t sb;
+    scoreboard_init(&sb);
+    /* ... */
+    zassert_equal(sb.score_a, expected);
+}
 ```

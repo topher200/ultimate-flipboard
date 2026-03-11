@@ -1,0 +1,4 @@
+tests:
+  scoreboard.logic:
+    tags: scoreboard
+    type: unit

@@ -16,25 +16,26 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
+#include "scoreboard.h"
+
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
 /* ── Score state ─────────────────────────────────────────────────────────── */
 
-static int score_a;
-static int score_b;
+static scoreboard_t sb;
 
 static void print_score(void)
 {
-	LOG_INF("Score │ Team A: %2d  │  Team B: %2d", score_a, score_b);
+	LOG_INF("Score │ Team A: %2d  │  Team B: %2d", sb.score_a, sb.score_b);
 	/* TODO: drive the flipdots display here */
 }
 
 /* ── Button definitions ──────────────────────────────────────────────────── */
 
-static const struct gpio_dt_spec btn_inc_a  = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
-static const struct gpio_dt_spec btn_inc_b  = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
-static const struct gpio_dt_spec btn_dec_a  = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
-static const struct gpio_dt_spec btn_reset  = GPIO_DT_SPEC_GET(DT_ALIAS(sw3), gpios);
+static const struct gpio_dt_spec btn_inc_a = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static const struct gpio_dt_spec btn_inc_b = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
+static const struct gpio_dt_spec btn_dec_a = GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios);
+static const struct gpio_dt_spec btn_reset = GPIO_DT_SPEC_GET(DT_ALIAS(sw3), gpios);
 
 /* ── Debounce ────────────────────────────────────────────────────────────── */
 
@@ -43,7 +44,6 @@ static const struct gpio_dt_spec btn_reset  = GPIO_DT_SPEC_GET(DT_ALIAS(sw3), gp
 struct btn_state { int64_t last_ms; };
 static struct btn_state st_inc_a, st_inc_b, st_dec_a, st_reset;
 
-/* Returns true if enough time has passed since the last accepted press. */
 static bool debounce(struct btn_state *s)
 {
 	int64_t now = k_uptime_get();
@@ -64,7 +64,7 @@ static void on_inc_a(const struct device *dev, struct gpio_callback *cb,
 {
 	ARG_UNUSED(dev); ARG_UNUSED(cb); ARG_UNUSED(pins);
 	if (!debounce(&st_inc_a)) return;
-	score_a++;
+	scoreboard_inc_a(&sb);
 	print_score();
 }
 
@@ -73,7 +73,7 @@ static void on_inc_b(const struct device *dev, struct gpio_callback *cb,
 {
 	ARG_UNUSED(dev); ARG_UNUSED(cb); ARG_UNUSED(pins);
 	if (!debounce(&st_inc_b)) return;
-	score_b++;
+	scoreboard_inc_b(&sb);
 	print_score();
 }
 
@@ -82,7 +82,7 @@ static void on_dec_a(const struct device *dev, struct gpio_callback *cb,
 {
 	ARG_UNUSED(dev); ARG_UNUSED(cb); ARG_UNUSED(pins);
 	if (!debounce(&st_dec_a)) return;
-	if (score_a > 0) score_a--;
+	scoreboard_dec_a(&sb);
 	print_score();
 }
 
@@ -91,8 +91,7 @@ static void on_reset(const struct device *dev, struct gpio_callback *cb,
 {
 	ARG_UNUSED(dev); ARG_UNUSED(cb); ARG_UNUSED(pins);
 	if (!debounce(&st_reset)) return;
-	score_a = 0;
-	score_b = 0;
+	scoreboard_reset(&sb);
 	LOG_INF("Scoreboard reset");
 	print_score();
 }
@@ -126,6 +125,8 @@ int main(void)
 {
 	LOG_INF("Ultimate Flipboard starting");
 
+	scoreboard_init(&sb);
+
 	setup_button(&btn_inc_a, &cb_inc_a, on_inc_a);
 	setup_button(&btn_inc_b, &cb_inc_b, on_inc_b);
 	setup_button(&btn_dec_a, &cb_dec_a, on_dec_a);
@@ -134,7 +135,6 @@ int main(void)
 	LOG_INF("Ready — BTN1=A+  BTN2=B+  BTN3=A−  BTN4=reset");
 	print_score();
 
-	/* Everything else is interrupt-driven; sleep forever. */
 	while (true) {
 		k_sleep(K_FOREVER);
 	}
