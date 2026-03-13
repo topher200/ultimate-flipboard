@@ -61,8 +61,6 @@ static int send_frame_bytes(const uint8_t *data, size_t len)
 		return -ENODEV;
 	}
 
-	LOG_HEXDUMP_DBG(data, len, "TX frame");
-
 	for (size_t i = 0; i < len; i++) {
 		uart_poll_out(uart_dev, data[i]);
 	}
