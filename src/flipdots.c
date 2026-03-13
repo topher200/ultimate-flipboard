@@ -11,7 +11,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(flipdots, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(flipdots, LOG_LEVEL_DBG);
 
 /* UART device for RS485 communication */
 #define FLIPDOTS_UART_NODE DT_ALIAS(flipdots_serial)
@@ -60,6 +60,8 @@ static int send_frame_bytes(const uint8_t *data, size_t len)
 		LOG_ERR("UART device not ready");
 		return -ENODEV;
 	}
+
+	LOG_HEXDUMP_DBG(data, len, "TX frame");
 
 	for (size_t i = 0; i < len; i++) {
 		uart_poll_out(uart_dev, data[i]);
@@ -111,6 +113,6 @@ int flipdots_init(void)
 		return -ENODEV;
 	}
 
-	LOG_INF("Flipdots driver initialized");
+	LOG_INF("Flipdots driver initialized (UART: %s)", uart_dev->name);
 	return 0;
 }
