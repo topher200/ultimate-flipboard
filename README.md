@@ -4,6 +4,8 @@ A flipdots-based scoreboard that keeps track of ultimate scores, including a MMP
 
 Uses a [flipdots board](https://flipdots.com/en/products-services/flip-dot-boards-xy5/) from Flipdots.com.
 
+This branch is for the nRF54H20DK board.
+
 # Installation
 
 ## Install nRF SDK
