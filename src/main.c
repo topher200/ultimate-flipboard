@@ -21,6 +21,17 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
+/* ── P9 GPIO test mode ──────────────────────────────────────────────────── */
+/* Set to 1 to run a GPIO square-wave on P9.04 instead of normal app.      */
+#define P9_GPIO_TEST 0
+
+#if P9_GPIO_TEST
+#define P9_TEST_PIN  4   /* P9.04 */
+#define P7_TEST_PIN  7   /* P7.07 — known-working reference */
+static const struct device *gpio9_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio9));
+static const struct device *gpio7_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio7));
+#endif
+
 /* ── Score state ─────────────────────────────────────────────────────────── */
 
 static scoreboard_t sb;
@@ -159,6 +170,38 @@ int main(void)
 	int ret;
 
 	LOG_INF("Ultimate Flipboard starting");
+
+#if P9_GPIO_TEST
+	/* ── GPIO square-wave test on P9.04 + P7.07 (reference) ────────── */
+	{
+		bool p9_ok = gpio9_dev && device_is_ready(gpio9_dev);
+		bool p7_ok = gpio7_dev && device_is_ready(gpio7_dev);
+
+		if (p9_ok) {
+			gpio_pin_configure(gpio9_dev, P9_TEST_PIN, GPIO_OUTPUT_HIGH);
+			LOG_INF("P9.%02d ready (3.3 V rail)", P9_TEST_PIN);
+		} else {
+			LOG_ERR("gpio9 device not ready!");
+		}
+		if (p7_ok) {
+			gpio_pin_configure(gpio7_dev, P7_TEST_PIN, GPIO_OUTPUT_HIGH);
+			LOG_INF("P7.%02d ready (1.8 V reference)", P7_TEST_PIN);
+		} else {
+			LOG_ERR("gpio7 device not ready!");
+		}
+
+		LOG_INF("Toggling both pins at ~500 Hz — probe P9.04 and P7.07");
+		while (true) {
+			if (p9_ok) {
+				gpio_pin_toggle(gpio9_dev, P9_TEST_PIN);
+			}
+			if (p7_ok) {
+				gpio_pin_toggle(gpio7_dev, P7_TEST_PIN);
+			}
+			k_busy_wait(1000);  /* 1 ms half-period → ~500 Hz */
+		}
+	}
+#endif
 
 	scoreboard_init(&sb);
 
