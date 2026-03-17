@@ -4,7 +4,7 @@ set shell := ['bash', '-uc']
 # Arduino Nano settings
 fqbn := "arduino:avr:nano:cpu=atmega328old"
 port := "/dev/ttyUSB0"
-sketch := "blink"
+sketch := "flipflop"
 
 # List available commands
 default:
